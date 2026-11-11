@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+.venv/
+.env
+
+# local tooling / personal prep notes
+.claude/settings.local.json
+notes/
+*.pdf
