@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Admin view: Settings > Users > (user) -->
+    <record id="res_users_view_form" model="ir.ui.view">
+        <field name="name">res.users.form.user.email.subscription</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form"/>
+        <field name="arch" type="xml">
+            <div name="button_box" position="inside">
+                <button name="%(action_user_email_subscription)d" type="action"
+                        class="oe_stat_button" icon="fa-bell-slash"
+                        context="{'search_default_user_id': id, 'search_default_unsubscribed': 1}">
+                    <field name="unsubscribed_count" widget="statinfo" string="Unsubscribed"/>
+                </button>
+            </div>
+            <page name="preferences" position="after">
+                <page string="Notifications" name="email_subscriptions">
+                    <field name="email_subscription_ids">
+                        <list create="0" delete="0" editable="bottom">
+                            <field name="template_id"/>
+                            <field name="is_subscribed" widget="boolean_toggle"/>
+                        </list>
+                    </field>
+                </page>
+            </page>
+        </field>
+    </record>
+
+    <!-- The user's own profile: avatar menu > Preferences -->
+    <record id="res_users_view_form_preferences" model="ir.ui.view">
+        <field name="name">res.users.preferences.form.user.email.subscription</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form_simple_modif"/>
+        <field name="arch" type="xml">
+            <page name="preferences_page" position="after">
+                <page string="Notifications" name="email_subscriptions">
+                    <field name="email_subscription_ids">
+                        <list create="0" delete="0" editable="bottom">
+                            <field name="template_id"/>
+                            <field name="is_subscribed" widget="boolean_toggle"/>
+                        </list>
+                    </field>
+                </page>
+            </page>
+        </field>
+    </record>
+</odoo>

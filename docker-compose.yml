@@ -1,0 +1,35 @@
+# Local dev setup: Odoo 19 + PostgreSQL + Mailpit (catches all outgoing mail).
+# Odoo:    http://localhost:8069
+# Mailpit: http://localhost:8025
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD: odoo  # local only, port is not published
+      POSTGRES_DB: postgres
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+  odoo:
+    image: odoo:19.0
+    depends_on: [db, mailpit]
+    ports:
+      - "8069:8069"
+    environment:
+      HOST: db
+      USER: odoo
+      PASSWORD: odoo
+    volumes:
+      - ./:/mnt/extra-addons  # repo root = addons path, so user_email_subscription/ is found
+      - odoo-data:/var/lib/odoo
+    command: --dev=xml --smtp=mailpit --smtp-port=1025
+
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - "8025:8025"
+
+volumes:
+  db-data:
+  odoo-data:

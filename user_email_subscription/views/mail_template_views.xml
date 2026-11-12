@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="mail_template_view_form" model="ir.ui.view">
+        <field name="name">mail.template.form.user.email.subscription</field>
+        <field name="model">mail.template</field>
+        <field name="inherit_id" ref="mail.email_template_form"/>
+        <field name="arch" type="xml">
+            <!-- The standard template form has no smart-button area yet. -->
+            <xpath expr="//div[hasclass('oe_title')]" position="before">
+                <div class="oe_button_box" name="button_box">
+                    <button name="%(action_user_email_subscription)d" type="action"
+                            class="oe_stat_button" icon="fa-bell-slash"
+                            invisible="not is_user_subscribable"
+                            context="{'search_default_template_id': id, 'search_default_unsubscribed': 1}">
+                        <field name="unsubscribed_count" widget="statinfo" string="Unsubscribed"/>
+                    </button>
+                </div>
+            </xpath>
+            <field name="subject" position="after">
+                <field name="is_user_subscribable"/>
+            </field>
+        </field>
+    </record>
+</odoo>

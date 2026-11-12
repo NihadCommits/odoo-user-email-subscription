@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Employees see and change only their own subscriptions. -->
+    <record id="user_email_subscription_rule_own" model="ir.rule">
+        <field name="name">User Email Subscription: own rows</field>
+        <field name="model_id" ref="model_user_email_subscription"/>
+        <field name="domain_force">[('user_id', '=', user.id)]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_user'))]"/>
+    </record>
+
+    <!-- User admins see and change everyone's. Rules of different groups are OR-ed. -->
+    <record id="user_email_subscription_rule_admin" model="ir.rule">
+        <field name="name">User Email Subscription: all rows</field>
+        <field name="model_id" ref="model_user_email_subscription"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_erp_manager'))]"/>
+    </record>
+</odoo>
