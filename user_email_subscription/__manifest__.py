@@ -12,5 +12,8 @@
         'views/mail_template_views.xml',
         'views/res_users_views.xml',
     ],
+    'demo': [
+        'data/user_email_subscription_demo.xml',
+    ],
     'license': 'LGPL-3',
 }

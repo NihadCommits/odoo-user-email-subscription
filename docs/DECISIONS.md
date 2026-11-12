@@ -28,14 +28,26 @@ Short log of the main choices, why they were made and what else was possible.
     and must be kept in sync on every new user/template.
 - **Trade-off:** raw SQL and a cross join; fine for a prototype (performance is out of scope).
 
-## 3. Send-path override in two places (planned)
+## 3. Send-path override in two places
 
-- **Hook A** `mail.template._generate_template_recipients`: drop opted-out users' partners
-  and e-mail addresses from the computed recipients (direct `send_mail`, composer, preview).
-- **Hook B** `mail.compose.message` puts the template id into the context;
-  `mail.thread._notify_get_recipients` drops opted-out users, including followers.
+One rule for both: drop every recipient that is the partner of an opted-out user or has
+that user's e-mail address (`mail.template._get_unsubscribed_recipients`).
+
+- **Hook A** `mail.template.send_mail_batch` (direct sending, e.g. report crons; `send_mail`
+  calls it): build the mails without sending, remove opted-out users from `recipient_ids`,
+  `email_to`, `email_cc`, then send. A mail with nobody left is **cancelled** (visible as
+  "Cancelled" under Technical > Emails) instead of failing with "no recipient".
+  - First plan was `_generate_template_recipients` (also covers composer and preview), but
+    it cannot cancel a mail that ends up empty. The composer is covered by Hook B anyway.
+- **Hook B** chatter messages (composer, `message_post_with_source`), incl. followers:
+  - part 1 `mail.compose.message._action_send_mail_comment` puts the template id into the context,
+  - part 2 `mail.thread._notify_get_recipients` removes opted-out users. This runs before Odoo
+    splits recipients into e-mail and inbox, so both channels are skipped.
+  - Why a context key: `mail.message` and `mail.mail` have no template field in Odoo 19.
 - **Why not one hook in `mail.mail._send`:** a `mail.mail` does not know its template,
   `force_send` sends before a later filter runs, and inbox notifications are not mails.
+- **Known limits:** composer "mass mail" mode (one mail per selected record, used for
+  customers) is not filtered; messages scheduled for later lose the context key.
 
 ## 4. Suppress on every channel
 
@@ -73,3 +85,12 @@ restores the old choices. Safe default: technical mails (e.g. 2FA codes) are nev
 - Bulk actions are `<header>` buttons of the list (shown when rows are selected).
   Alternative: server actions in the "Actions" menu - more XML, same result.
 - The tab is added to the admin form and to the Preferences form (the user's own profile).
+
+## 9. Demo data and tests
+
+- `data/user_email_subscription_demo.xml` (loaded only with demo data): "Weekly Report" sent by
+  a cron to every internal user (Hook A), "Contact Update" posted on "Azure Interior", which
+  Marc Demo follows (Hook B). Both templates have `use_default_to = False`: in Odoo 19 a
+  template otherwise ignores `partner_to` and writes to the record itself.
+- Tests were out of scope, but the core rule has 4 short tests (`tests/test_opt_out.py`):
+  direct send, follower notification, cancelled empty mail, unflagged template.
