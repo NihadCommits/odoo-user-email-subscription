@@ -2,6 +2,8 @@
     'name': 'User Email Subscription',
     'version': '19.0.1.0.0',
     'summary': 'Users can opt out of selected mail templates on their profile',
+    # Own text, so Odoo does not parse README.md as reStructuredText (logs errors).
+    'description': 'Opt-out of selected mail templates per user. See README.md.',
     'category': 'Productivity/Discuss',
     'author': 'NihadCommits',
     'depends': ['mail'],
