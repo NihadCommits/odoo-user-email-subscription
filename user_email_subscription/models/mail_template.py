@@ -53,7 +53,9 @@ class MailTemplate(models.Model):
                 mail.email_to = self._remove_emails(mail.email_to, emails)
                 mail.email_cc = self._remove_emails(mail.email_cc, emails)
                 if not (mail.recipient_ids or mail.email_to or mail.email_cc):
-                    mail.cancel()  # nobody left: shows as "Cancelled" instead of a send error
+                    # Nobody left: cancel instead of failing with "no recipient", and take it
+                    # out of the record's chatter, where it would look delivered.
+                    mail.write({'state': 'cancel', 'model': False, 'res_id': False})
         if force_send:
             mails.send(raise_exception=raise_exception)
         return mails

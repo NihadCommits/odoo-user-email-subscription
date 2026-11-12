@@ -34,6 +34,15 @@ class TestOptOut(TransactionCase):
         self.anna.unsubscribed_template_ids = self.template
         mail = self.template.send_mail_batch(self.customer.ids)
         self.assertEqual(mail.state, 'cancel')
+        self.assertNotIn(mail.mail_message_id, self.customer.message_ids)
+
+    def test_toggle_is_logged_in_user_chatter(self):
+        row = self.env['user.email.subscription'].search(
+            [('user_id', '=', self.anna.id), ('template_id', '=', self.template.id)])
+        row.with_user(self.anna).is_subscribed = False
+        log = self.anna.message_ids[0]
+        self.assertIn('Unsubscribed from e-mail template "Report"', log.body)
+        self.assertEqual(log.author_id, self.anna.partner_id)
 
     def test_unflagged_template_reaches_everyone(self):
         self.template.is_user_subscribable = False

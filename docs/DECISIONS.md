@@ -36,7 +36,8 @@ that user's e-mail address (`mail.template._get_unsubscribed_recipients`).
 - **Hook A** `mail.template.send_mail_batch` (direct sending, e.g. report crons; `send_mail`
   calls it): build the mails without sending, remove opted-out users from `recipient_ids`,
   `email_to`, `email_cc`, then send. A mail with nobody left is **cancelled** (visible as
-  "Cancelled" under Technical > Emails) instead of failing with "no recipient".
+  "Cancelled" under Technical > Emails) instead of failing with "no recipient", and taken out
+  of the record's chatter, where it would look delivered. Not deleted: `send_mail` returns its id.
   - First plan was `_generate_template_recipients` (also covers composer and preview), but
     it cannot cancel a mail that ends up empty. The composer is covered by Hook B anyway.
 - **Hook B** chatter messages (composer, `message_post_with_source`), incl. followers:
@@ -59,10 +60,19 @@ The flag (`is_user_subscribable`, set by the admin) is the main switch; the opt-
 user's personal choice. Without the flag the template is always sent. Setting the flag again
 restores the old choices. Safe default: technical mails (e.g. 2FA codes) are never filtered.
 
-## 6. Audit on the user's chatter (planned)
+## 6. Audit on the user's chatter
 
-`res.users` has no chatter in standard Odoo. Plan: add `mail.thread` to `res.users` and post
-"who / when / which template" there. Fallback: the related partner's chatter.
+- `res.users` has no chatter in standard Odoo, so the module adds `mail.thread` to it and a
+  `<chatter/>` to the user form. The partner's chatter would exist already, but it is a
+  different record and not what the task asks for.
+- Every real change (toggle, bulk action, profile) goes through `user.email.subscription.write()`,
+  which logs a note with `_message_log`: author = who, date = when, text = which template.
+  Notes notify nobody. Unchanged rows are not logged.
+- Risk check: no Odoo app in this image reads user chatter fields; Odoo's own user tests
+  (mail: 21, base: 25 of 26) pass. The one base error happens before `mail` is loaded and is
+  about the mail column `notification_type`, not about this module.
+- Side effect: template mails rendered on a user (e.g. the weekly report) now also show in
+  that user's chatter, like on any other record with a chatter.
 
 ## 7. Security
 
@@ -92,5 +102,5 @@ restores the old choices. Safe default: technical mails (e.g. 2FA codes) are nev
   a cron to every internal user (Hook A), "Contact Update" posted on "Azure Interior", which
   Marc Demo follows (Hook B). Both templates have `use_default_to = False`: in Odoo 19 a
   template otherwise ignores `partner_to` and writes to the record itself.
-- Tests were out of scope, but the core rule has 4 short tests (`tests/test_opt_out.py`):
-  direct send, follower notification, cancelled empty mail, unflagged template.
+- Tests were out of scope, but the core rule has 5 short tests (`tests/test_opt_out.py`):
+  direct send, follower notification, cancelled empty mail, audit note, unflagged template.

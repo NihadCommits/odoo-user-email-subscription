@@ -48,11 +48,22 @@ class UserEmailSubscription(models.Model):
         # sudo(False) because the profile form saves through sudo() (see res_users.py).
         self.sudo(False).check_access('write')
         if 'is_subscribed' in vals:
-            command = Command.unlink if vals['is_subscribed'] else Command.link
-            for row in self:
+            subscribed = bool(vals['is_subscribed'])
+            command = Command.unlink if subscribed else Command.link
+            for row in self.filtered(lambda row: row.is_subscribed != subscribed):
                 row.user_id.sudo().unsubscribed_template_ids = [command(row.template_id.id)]
+                row._log_change(subscribed)
         self.invalidate_recordset()  # re-read the query on next access
         return True
+
+    def _log_change(self, subscribed):
+        # Audit trail in the user's chatter: the note's author and date answer
+        # "who" and "when", the text answers "which template".
+        if subscribed:
+            body = self.env._('Subscribed to e-mail template "%s"', self.template_id.name)
+        else:
+            body = self.env._('Unsubscribed from e-mail template "%s"', self.template_id.name)
+        self.user_id._message_log(body=body)
 
     # Bulk actions: header buttons of the list, run on the selected rows.
     def action_subscribe(self):

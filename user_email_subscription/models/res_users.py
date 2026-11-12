@@ -2,7 +2,10 @@ from odoo import fields, models
 
 
 class ResUsers(models.Model):
-    _inherit = 'res.users'
+    _name = 'res.users'
+    # mail.thread gives users their own chatter for the audit trail
+    # (standard Odoo users have none; the partner's chatter is a different record).
+    _inherit = ['res.users', 'mail.thread']
 
     # Same pivot table as mail.template.unsubscribed_user_ids, columns swapped.
     unsubscribed_template_ids = fields.Many2many(

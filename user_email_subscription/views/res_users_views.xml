@@ -23,6 +23,9 @@
                     </field>
                 </page>
             </page>
+            <xpath expr="//sheet" position="after">
+                <chatter/>  <!-- audit trail of subscription changes -->
+            </xpath>
         </field>
     </record>
 
